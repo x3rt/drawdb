@@ -426,6 +426,25 @@ export default function WorkSpace() {
     setVersion(null);
   };
 
+  const settingsFromParams = useCallback(() => {
+    const header = searchParams.get("header");
+    const sidebar = searchParams.get("sidebar");
+    const toolbar = searchParams.get("toolbar");
+    const readOnly = searchParams.get("readOnly");
+    if (header) {
+      setLayout((prev) => ({ ...prev, header: header !== "false" }));
+    }
+    if (sidebar) {
+      setLayout((prev) => ({ ...prev, sidebar: sidebar !== "false" }));
+    }
+    if (toolbar) {
+      setLayout((prev) => ({ ...prev, toolbar: toolbar !== "false" }));
+    }
+    if (readOnly === "true") {
+      setLayout((prev) => ({ ...prev, readOnly: true }));
+    }
+  }, [searchParams, setLayout]);
+
   useEffect(() => {
     if (
       tables?.length === 0 &&
