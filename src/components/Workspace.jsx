@@ -55,7 +55,7 @@ export default function WorkSpace() {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [selectedDb, setSelectedDb] = useState("");
   const { layout, setLayout } = useLayout();
-  const { settings } = useSettings();
+  const { settings, setSettings } = useSettings();
   const { types, setTypes } = useTypes();
   const { areas, setAreas } = useAreas();
   const { notes, setNotes } = useNotes();
@@ -431,6 +431,7 @@ export default function WorkSpace() {
     const sidebar = searchParams.get("sidebar");
     const toolbar = searchParams.get("toolbar");
     const readOnly = searchParams.get("readOnly");
+    const theme = searchParams.get("theme");
     if (header) {
       setLayout((prev) => ({ ...prev, header: header !== "false" }));
     }
@@ -443,7 +444,13 @@ export default function WorkSpace() {
     if (readOnly === "true") {
       setLayout((prev) => ({ ...prev, readOnly: true }));
     }
-  }, [searchParams, setLayout]);
+
+    if (theme === "light" || theme === "dark") {
+      setSettings((prev) =>
+        prev.mode === theme ? prev : { ...prev, mode: theme },
+      );
+    }
+  }, [searchParams, setLayout, setSettings]);
 
   useEffect(() => {
     if (
@@ -484,7 +491,8 @@ export default function WorkSpace() {
     document.title = "Editor | drawDB";
 
     load();
-  }, [load]);
+    settingsFromParams();
+  }, [load, settingsFromParams]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden theme">
