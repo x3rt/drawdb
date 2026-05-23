@@ -1849,7 +1849,7 @@ export default function ControlPanel({
                   // https://stackoverflow.com/a/70976017/1137077
                   e.target.releasePointerCapture(e.pointerId);
                 }}
-                onClick={!layout.readOnly && (() => setModal(MODAL.RENAME))}
+                onClick={!layout.readOnly ? (() => setModal(MODAL.RENAME)) : undefined}
               >
                 <span>{(isTemplate ? "Templates/" : "Diagrams/") + title}</span>
                 {version && (
