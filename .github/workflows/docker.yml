@@ -6,23 +6,20 @@ on:
       - "*"
 
 permissions:
-    packages: write
+  packages: write
+
 concurrency:
   group: "docker-image"
   cancel-in-progress: false
 
 jobs:
-  docker:    
+  build-amd64:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
 
     - name: Log in to ghcr
       uses: docker/login-action@v3
@@ -30,11 +27,37 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Build and push
+
+    - name: Build and push (amd64)
       uses: docker/build-push-action@v6
       with:
         push: true
-        tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64
+        tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }},ghcr.io/${{ github.repository }}:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
+  build-arm64:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to ghcr
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push (arm64)
+      uses: docker/build-push-action@v6
+      with:
+        push: true
+        platforms: linux/arm64
+        tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }},ghcr.io/${{ github.repository }}:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
