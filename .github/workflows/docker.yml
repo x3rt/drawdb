@@ -5,12 +5,14 @@ on:
     tags:
       - "*"
 
+permissions:
+    packages: write
 concurrency:
   group: "docker-image"
   cancel-in-progress: false
 
 jobs:
-  docker:
+  docker:    
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
