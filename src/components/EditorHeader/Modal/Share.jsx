@@ -1,5 +1,5 @@
-import { Banner, Button, Input, Spin, Toast } from "@douyinfe/semi-ui";
-import { useCallback, useContext, useEffect, useState } from "react";
+import {Banner, Button, Checkbox, Input, Select, Spin, Toast } from "@douyinfe/semi-ui";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IdContext } from "../../Workspace";
 import { IconLink } from "@douyinfe/semi-icons";
@@ -8,6 +8,7 @@ import {
   useDiagram,
   useEnums,
   useNotes,
+  useSettings,
   useTransform,
   useTypes,
 } from "../../../hooks";
@@ -15,6 +16,13 @@ import { databases } from "../../../data/databases";
 import { MODAL } from "../../../data/constants";
 import { create, patch, SHARE_FILENAME } from "../../../api/gists";
 import { getCustomTypes } from "../../../utils/customTypes";
+
+const defaultShareOptions = {
+  header: true,
+  sidebar: true,
+  toolbar: true,
+  readOnly: false,
+};
 
 export default function Share({ title, setModal }) {
   const { t } = useTranslation();
@@ -25,9 +33,36 @@ export default function Share({ title, setModal }) {
   const { areas } = useAreas();
   const { types } = useTypes();
   const { enums } = useEnums();
+  const { settings } = useSettings();
   const { transform } = useTransform();
   const [error, setError] = useState(null);
-  const url = window.location.origin + "/editor?shareId=" + gistId;
+  const [customizeUrl, setCustomizeUrl] = useState(false);
+  const [shareOptions, setShareOptions] = useState({
+    ...defaultShareOptions,
+    theme: settings.mode,
+  });
+  const url = useMemo(() => {
+    const params = new URLSearchParams({
+      shareId: gistId,
+    });
+
+    if (customizeUrl) {
+      Object.entries(shareOptions).forEach(([key, value]) => {
+        if (value !== defaultShareOptions[key]) {
+          params.set(key, String(value));
+        }
+      });
+    }
+
+    return `${window.location.origin}/editor?${params.toString()}`;
+  }, [customizeUrl, gistId, shareOptions]);
+
+  const setBooleanShareOption = (key) => (e) => {
+    setShareOptions((prev) => ({
+      ...prev,
+      [key]: e.target.checked,
+    }));
+  };
 
   const diagramToString = useCallback(() => {
     const allCustomTypes = getCustomTypes();
@@ -136,6 +171,54 @@ export default function Share({ title, setModal }) {
           <div className="flex gap-3">
             <Input value={url} size="large" readonly />
           </div>
+          <div className="mt-3">
+            <Checkbox
+              checked={customizeUrl}
+              onChange={(e) => setCustomizeUrl(e.target.checked)}
+            >
+              {t("customize_url")}
+            </Checkbox>
+          </div>
+          {customizeUrl && (
+            <div className="mt-3 space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <Checkbox
+                  checked={shareOptions.header}
+                  onChange={setBooleanShareOption("header")}
+                >
+                  {t("header")}
+                </Checkbox>
+                <Checkbox
+                  checked={shareOptions.sidebar}
+                  onChange={setBooleanShareOption("sidebar")}
+                >
+                  {t("sidebar")}
+                </Checkbox>
+                <Checkbox
+                  checked={shareOptions.toolbar}
+                  onChange={setBooleanShareOption("toolbar")}
+                >
+                  {t("toolbar")}
+                </Checkbox>
+                <Checkbox
+                  checked={shareOptions.readOnly}
+                  onChange={setBooleanShareOption("readOnly")}
+                >
+                  {t("read_only")}
+                </Checkbox>
+              </div>
+              <Select
+                value={shareOptions.theme}
+                onChange={(theme) =>
+                  setShareOptions((prev) => ({ ...prev, theme }))
+                }
+                style={{ width: "100%" }}
+              >
+                <Select.Option value="light">{t("light")}</Select.Option>
+                <Select.Option value="dark">{t("dark")}</Select.Option>
+              </Select>
+            </div>
+          )}
           <div className="text-xs mt-2">{t("share_info")}</div>
           <div className="flex gap-2 mt-3">
             <Button block onClick={unshare}>
