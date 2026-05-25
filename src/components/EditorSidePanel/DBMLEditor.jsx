@@ -49,10 +49,7 @@ export default function DBMLEditor() {
       }}
       extraControls={
         <Tooltip content={t("save")} position="left">
-          <Button
-            icon={<IconSaveStroked />}
-            onClick={handleApply}
-          />
+          <Button icon={<IconSaveStroked />} onClick={handleApply} />
         </Tooltip>
       }
     />
