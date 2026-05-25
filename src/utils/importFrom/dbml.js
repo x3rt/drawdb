@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 
 const parser = new Parser();
 
-export function fromDBML(src) {
+export function fromDBML(src, currentDiagram = null) {
   const ast = parser.parse(src, "dbmlv2");
 
   const tables = [];
@@ -14,18 +14,29 @@ export function fromDBML(src) {
 
   for (const schema of ast.schemas) {
     for (const table of schema.tables) {
+      const existingTable = currentDiagram?.tables.find(
+        (t) => t.name === table.name,
+      );
       let parsedTable = {};
-      parsedTable.id = nanoid();
+      parsedTable.id = existingTable?.id ?? nanoid();
       parsedTable.name = table.name;
+      parsedTable.x = existingTable?.x ?? 0;
+      parsedTable.y = existingTable?.y ?? 0;
       parsedTable.comment = table.note ?? "";
-      parsedTable.color = table.headerColor ?? "#175e7a";
+      parsedTable.color =
+        table.headerColor ?? existingTable?.color ?? "#175e7a";
+      parsedTable.locked = existingTable?.locked ?? false;
+      parsedTable.collapsed = existingTable?.collapsed ?? false;
       parsedTable.fields = [];
       parsedTable.indices = [];
 
       for (const column of table.fields) {
         const field = {};
+        const existingField = existingTable?.fields.find(
+          (f) => f.name === column.name,
+        );
 
-        field.id = nanoid();
+        field.id = existingField?.id ?? nanoid();
         field.name = column.name;
         field.type = column.type.type_name.toUpperCase();
         field.default = column.dbdefault?.value ?? "";
@@ -82,7 +93,15 @@ export function fromDBML(src) {
       relationship.endTableId = endTable.id;
       relationship.endFieldId = endField.id;
       relationship.startFieldId = startField.id;
-      relationship.id = nanoid();
+
+      const existingRel = currentDiagram?.relationships.find(
+        (r) =>
+          r.startTableId === relationship.startTableId &&
+          r.endTableId === relationship.endTableId &&
+          r.startFieldId === relationship.startFieldId &&
+          r.endFieldId === relationship.endFieldId,
+      );
+      relationship.id = existingRel?.id ?? nanoid();
 
       relationship.updateConstraint = ref.onDelete
         ? ref.onDelete[0].toUpperCase() + ref.onDelete.substring(1)
@@ -110,8 +129,12 @@ export function fromDBML(src) {
     }
 
     for (const schemaEnum of schema.enums) {
+      const existingEnum = currentDiagram?.enums.find(
+        (e) => e.name === schemaEnum.name,
+      );
       const parsedEnum = {};
 
+      parsedEnum.id = existingEnum?.id ?? nanoid();
       parsedEnum.name = schemaEnum.name;
       parsedEnum.values = schemaEnum.values.map((x) => x.name);
 
@@ -121,7 +144,9 @@ export function fromDBML(src) {
 
   const diagram = { tables, enums, relationships };
 
-  arrangeTables(diagram);
+  if (!currentDiagram) {
+    arrangeTables(diagram);
+  }
 
   return diagram;
 }
